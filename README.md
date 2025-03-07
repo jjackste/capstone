@@ -12,5 +12,12 @@ This code is to show WERC what the injector system is capable of. In the final h
 
 ### Design Day Goals
 * Show the possibility of control, through manual adjustments
-* Use a simlulated flight path to illustrate the benefit of a hybrid rocket system
+* Use a simulated flight path to illustrate the benefit of a hybrid rocket system
 * Show to possibility of a second ignition, another hybrid rocket benefit
+
+### Functionality to Add
+* simulated flight path control
+* basic logic for changes in pressure differences
+* safety shutoff / safety controls
+* second ignition controls
+* 
