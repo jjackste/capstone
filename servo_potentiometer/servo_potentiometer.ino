@@ -1,44 +1,71 @@
 #include <Servo.h>
 
+// Hardware
 Servo myServo;
 const int servoPin = 10;
 const int potPin = A1;
 
-int maxAngle = 130;
-int minAngle = 60;
-int setAngle = 0;
+// Servo angles
+const int closedAngle = 130;  // Closed position
+const int openAngle = 60;     // Open position
+int setAngle = closedAngle;   // Start with valve closed
 
+// Timing
 unsigned long currMillis;
-unsigned long prevMillis = 0;
-const unsigned long printInterval = 1000;  // Print printInterval in milliseconds
-const unsigned long servoInterval = 10;    // Print   Interval in milliseconds
+unsigned long prevServoMillis = 0;
+unsigned long prevPrintMillis = 0;
+const unsigned long printInterval = 500;  // Print interval in milliseconds
+const unsigned long servoInterval = 10;    // Servo update interval in milliseconds
 
+// Unlocking logic
+bool unlocked = false; // start unlocked
+int unlockStage = 0;  // 0 = Locked, 1 = Open reached, 2 = Closed reached (Unlocked)
 
 void setup() {
   Serial.begin(9600);
   myServo.attach(servoPin);
   pinMode(potPin, INPUT);
+
+  // Start with valve closed
+  myServo.write(closedAngle);
+  Serial.println("Valve locked: Waiting for unlock sequence");
 }
 
 void loop() {
-  // Updating the timing variable
   currMillis = millis();
-
-  // Read the potentiometer and map its value (0-255) to servo angle (0-180)
+  
+  // Read and map the potentiometer value
   int potValue = analogRead(potPin);
-  setAngle = map(potValue, 0, 1023, minAngle, maxAngle);
+  int mappedAngle = map(potValue, 0, 1023, openAngle, closedAngle);
 
-
-  // Set the servo position based on the potentiometer value allowing it time to move
-  if (currMillis - prevMillis >= servoInterval) {
-    myServo.write(setAngle);
+  // Unlock logic
+  if (!unlocked) {
+    if (unlockStage == 0 && mappedAngle <= openAngle + 5) {
+      unlockStage = 1;  // Fully opened
+      Serial.println("Step 1: Valve fully open.");
+    }
+    if (unlockStage == 1 && mappedAngle >= closedAngle - 5) {
+      unlockStage = 2;  // Fully closed → Unlock
+      unlocked = true;
+      Serial.println("Valve unlocked: Now controlled by potentiometer");
+    }
   }
 
-  // Print the current servo angle every 1000ms
-  if (currMillis - prevMillis >= printInterval) {
+  // Control servo only if unlocked
+  if (unlocked && currMillis - prevServoMillis >= servoInterval) {
+    prevServoMillis = currMillis;
+    if (mappedAngle != setAngle) { // Update only if angle changed
+      setAngle = mappedAngle;
+      myServo.write(setAngle);
+    }
+  }
+
+  // **Ensure Serial Monitor prints every second**
+  if (currMillis - prevPrintMillis >= printInterval) {
+    prevPrintMillis = currMillis;
     Serial.print("Servo angle: ");
     Serial.print(setAngle);
-    Serial.println(" degrees.");
-    prevMillis = currMillis;
+    Serial.print(" degrees. ");
+    Serial.println(unlocked ? "Valve unlocked." : "Waiting for unlock sequence");
   }
 }
