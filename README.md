@@ -20,4 +20,3 @@ This code is to show WERC what the injector system is capable of. In the final h
 * basic logic for changes in pressure differences
 * safety shutoff / safety controls
 * second ignition controls
-* 
